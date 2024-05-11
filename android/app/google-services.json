@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "237209358428",
+    "project_id": "inspire-board-5d4a2",
+    "storage_bucket": "inspire-board-5d4a2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:237209358428:android:94c7eaf37253cfca6b9699",
+        "android_client_info": {
+          "package_name": "com.example.finalproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDH3Y2Tt1gqq-grIkyNwytFXHhML54G6y4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

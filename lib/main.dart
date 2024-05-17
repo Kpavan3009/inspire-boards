@@ -391,3 +391,219 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       ),
     );
   }
+
+Future<void> _saveForLater(ImageData image) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedImages = prefs.getStringList('savedImages') ?? [];
+    savedImages.add(json.encode(image.toJson()));
+    await prefs.setStringList('savedImages', savedImages);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Image saved for later')),
+    );
+  }
+
+  void _openOriginalPage(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  void _shareOnSocialMedia(String imageUrl) {
+    Share.share('Check out this amazing image: $imageUrl');
+  }
+
+  void _showMoreOptions(BuildContext context, ImageData image) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.info),
+              title: Text('Image Details'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ImageDetailsScreen(image: image),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.download),
+              title: Text('Download Image'),
+              onTap: () {
+                _downloadImage(image.url);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _downloadImage(String imageUrl) async {
+    final response = await http.get(Uri.parse(imageUrl));
+    final bytes = response.bodyBytes;
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/image.jpg');
+    await file.writeAsBytes(bytes);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Image downloaded')),
+    );
+  }
+}
+
+class SearchScreen extends StatefulWidget {
+  @override
+  _SearchScreenState createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  List<ImageData> searchResults = [];
+
+  void searchImages(String query) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/search/photos?query=$query'),
+        headers: {'Authorization': 'Client-ID $apiKey'},
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        setState(() {
+          searchResults = (jsonData['results'] as List)
+              .map((imageData) => ImageData(
+                    id: imageData['id'],
+                    url: imageData['urls']['regular'],
+                    description: imageData['description'] ?? '',
+                    originalUrl: imageData['links']['html'],
+                  ))
+              .toList();
+        });
+      } else {
+        throw Exception('Failed to search images');
+      }
+    } catch (e) {
+      print('Error searching images: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: TextField(
+          onSubmitted: searchImages,
+          decoration: InputDecoration(
+            hintText: 'Search images',
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16),
+            prefixIcon: Icon(Icons.search),
+          ),
+        ),
+      ),
+      body: searchResults.isEmpty
+          ? Center(child: Text('No search results'))
+          : GridView.builder(
+              itemCount: searchResults.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 5,
+                mainAxisSpacing: 5,
+              ),
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ImageDetailsScreen(image: searchResults[index]),
+                      ),
+                    );
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Stack(
+                      children: [
+                        Image.network(
+                          searchResults[index].url,
+                          fit: BoxFit.cover,
+                        ),
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withOpacity(0.7),
+                                ],
+                              ),
+                            ),
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.bookmark_border),
+                                      color: Colors.white,
+                                      onPressed: () {
+                                        _saveForLater(searchResults[index]);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.link),
+                                      color: Colors.white,
+                                      onPressed: () {
+                                        _openOriginalPage(
+                                            searchResults[index].originalUrl);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.share),
+                                      color: Colors.white,
+                                      onPressed: () {
+                                        _shareOnSocialMedia(
+                                            searchResults[index].url);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.more_vert),
+                                      color: Colors.white,
+                                      onPressed: () {
+                                        _showMoreOptions(
+                                            context, searchResults[index]);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }

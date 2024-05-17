@@ -607,3 +607,71 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
     );
   }
+ Future<void> _saveForLater(ImageData image) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedImages = prefs.getStringList('savedImages') ?? [];
+    savedImages.add(json.encode(image.toJson()));
+    await prefs.setStringList('savedImages', savedImages);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Image saved for later')),
+    );
+  }
+
+  void _openOriginalPage(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  void _shareOnSocialMedia(String imageUrl) {
+    Share.share('Check out this amazing image: $imageUrl');
+  }
+
+  void _showMoreOptions(BuildContext context, ImageData image) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.info),
+              title: Text('Image Details'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ImageDetailsScreen(image: image),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.download),
+              title: Text('Download Image'),
+              onTap: () {
+                _downloadImage(image.url);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _downloadImage(String imageUrl) async {
+    final response = await http.get(Uri.parse(imageUrl));
+    final bytes = response.bodyBytes;
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/image.jpg');
+    await file.writeAsBytes(bytes);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+    content: Text('Image downloaded')),
+    );
+  }
+}

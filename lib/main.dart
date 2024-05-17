@@ -675,3 +675,83 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 }
+
+class ProfileScreen extends StatefulWidget {
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  List<Collection> collections = [];
+  List<ImageData> uploadedImages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadCollections();
+    loadUploadedImages();
+  }
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+  }
+
+  Future<void> loadCollections() async {
+    final prefs = await SharedPreferences.getInstance();
+    final collectionData = prefs.getString('collections');
+
+    if (collectionData != null) {
+      final decodedData = json.decode(collectionData);
+      setState(() {
+        collections = (decodedData as List)
+            .map((collectionData) => Collection(
+                  id: collectionData['id'],
+                  name: collectionData['name'],
+                  images: (collectionData['images'] as List)
+                      .map((imageData) => ImageData(
+                            id: imageData['id'],
+                            url: imageData['url'],
+                            description: imageData['description'],
+                            originalUrl: imageData['originalUrl'],
+                          ))
+                      .toList(),
+                ))
+            .toList();
+      });
+    }
+  }
+
+  Future<void> loadUploadedImages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final uploadedImagesData = prefs.getString('uploadedImages');
+
+    if (uploadedImagesData != null) {
+      final decodedData = json.decode(uploadedImagesData);
+      setState(() {
+        uploadedImages = (decodedData as List)
+            .map((imageData) => ImageData(
+                  id: imageData['id'],
+                  url: imageData['url'],
+                  description: imageData['description'],
+                  originalUrl: imageData['originalUrl'],
+                ))
+            .toList();
+      });
+    }
+  }
+
+  Future<void> saveCollections() async {
+    final prefs = await SharedPreferences.getInstance();
+    final collectionData = json.encode(collections.map((collection) => {
+          'id': collection.id,
+          'name': collection.name,
+          'images': collection.images
+              .map((image) => {
+                    'id': image.id,
+                    'url': image.url,
+                    'description': image.description,
+                    'originalUrl': image.originalUrl,
+                  })
+              .toList(),
+        }).toList());
+    await prefs.setString('collections', collectionData);
+  }

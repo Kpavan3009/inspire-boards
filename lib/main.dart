@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
   );
 }
 
-  
+
 
   @override
   Widget build(BuildContext context) {
@@ -185,3 +185,209 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 }
 
+class ImageData {
+  final String id;
+  final String url;
+  final String description;
+  final String originalUrl;
+
+  ImageData({
+    required this.id,
+    required this.url,
+    required this.description,
+    required this.originalUrl,
+  });
+
+  ImageData copyWith({String? url}) {
+    return ImageData(
+      id: id,
+      url: url ?? this.url,
+      description: description,
+      originalUrl: originalUrl,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'url': url,
+      'description': description,
+      'originalUrl': originalUrl,
+    };
+  }
+}
+
+class Collection {
+  final String id;
+  final String name;
+  final List<ImageData> images;
+
+  Collection({
+    required this.id,
+    required this.name,
+    required this.images,
+  });
+}
+
+class HomeFeedScreen extends StatefulWidget {
+  @override
+  _HomeFeedScreenState createState() => _HomeFeedScreenState();
+}
+
+class _HomeFeedScreenState extends State<HomeFeedScreen> {
+  List<ImageData> images = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchImages();
+  }
+
+  Future<void> fetchImages() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/photos/random?count=20'),
+        headers: {'Authorization': 'Client-ID $apiKey'},
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        setState(() {
+          images = (jsonData as List)
+              .map((imageData) => ImageData(
+                    id: imageData['id'],
+                    url: imageData['urls']['regular'],
+                    description: imageData['description'] ?? '',
+                    originalUrl: imageData['links']['html'],
+                  ))
+              .toList();
+        });
+      } else {
+        throw Exception('Failed to load images');
+      }
+    } catch (e) {
+      print('Error fetching images: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+
+            SizedBox(width: 8),
+            Text('InspireBoard'),
+          ],
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SearchScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: GridView.builder(
+        itemCount: images.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: 5,
+          mainAxisSpacing: 5,
+        ),
+        itemBuilder: (context, index) {
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ImageDetailsScreen(image: images[index]),
+                ),
+              );
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Stack(
+                children: [
+                  Image.network(
+                    images[index].url,
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                          ],
+                        ),
+                      ),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.bookmark_border),
+                                color: Colors.white,
+                                onPressed: () {
+                                  _saveForLater(images[index]);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.link),
+                                color: Colors.white,
+                                onPressed: () {
+                                  _openOriginalPage(images[index].originalUrl);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.share),
+                                color: Colors.white,
+                                onPressed: () {
+                                  _shareOnSocialMedia(images[index].url);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.more_vert),
+                                color: Colors.white,
+                                onPressed: () {
+                                  _showMoreOptions(context, images[index]);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }

@@ -755,3 +755,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }).toList());
     await prefs.setString('collections', collectionData);
   }
+ Future<void> saveUploadedImages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final uploadedImagesData = json.encode(uploadedImages.map((image) => {
+          'id': image.id,
+          'url': image.url,
+          'description': image.description,
+          'originalUrl': image.originalUrl,
+        }).toList());
+    await prefs.setString('uploadedImages', uploadedImagesData);
+  }
+
+  void createCollection(String name) {
+    setState(() {
+      collections.add(Collection(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        images: [],
+      ));
+    });
+    saveCollections();
+  }
+
+  void deleteCollection(String id) {
+    setState(() {
+      collections.removeWhere((collection) => collection.id == id);
+    });
+    saveCollections();
+  }
+
+  void addImageToCollection(ImageData image, String collectionId) {
+    setState(() {
+      collections
+          .firstWhere((collection) => collection.id == collectionId)
+          .images
+          .add(image);
+    });
+    saveCollections();
+  }

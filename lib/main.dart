@@ -793,3 +793,212 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
     saveCollections();
   }
+
+  void removeImageFromCollection(ImageData image, String collectionId) {
+    setState(() {
+      collections
+          .firstWhere((collection) => collection.id == collectionId)
+          .images
+          .removeWhere((img) => img.id == image.id);
+    });
+    saveCollections();
+  }
+
+  void uploadImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.getImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/uploaded_image.jpg');
+      await file.writeAsBytes(bytes);
+      final imageData = ImageData(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        url: file.path,
+        description: '',
+        originalUrl: '',
+      );
+      setState(() {
+        uploadedImages.add(imageData);
+      });
+      saveUploadedImages();
+    }
+  }
+
+  void getLocation() async {
+    final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          'Location: Latitude ${position.latitude}, Longitude ${position.longitude}'),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Profile'),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: NetworkImage(
+                        'https://example.com/profile-image.jpg'), // Replace with actual profile image URL
+                  ),
+                  SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pavan Rikwith', // Replace with actual user name
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'kpavan3009@gmail.com', // Replace with actual user email
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Collections',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: collections.length,
+              itemBuilder: (context, index) {
+                final collection = collections[index];
+                return ListTile(
+                  title: Text(collection.name),
+                  subtitle: Text('${collection.images.length} images'),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () => deleteCollection(collection.id),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            CollectionDetailsScreen(collection: collection),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Uploaded Images',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: uploadedImages.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 5,
+                mainAxisSpacing: 5,
+              ),
+              itemBuilder: (context, index) {
+                final image = uploadedImages[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ImageDetailsScreen(image: image),
+                      ),
+                    );
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      File(image.url),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            child: Icon(Icons.add),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  String collectionName = '';
+                  return AlertDialog(
+                    title: Text('Create Collection'),
+                    content: TextField(
+                      onChanged: (value) {
+                        collectionName = value;
+                      },
+                      decoration: InputDecoration(hintText: 'Collection Name'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          createCollection(collectionName);
+                        },
+                        child: Text('Create'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+          SizedBox(height: 16),
+          FloatingActionButton(
+            child: Icon(Icons.camera_alt),
+            onPressed: uploadImage,
+          ),
+          SizedBox(height: 16),
+          FloatingActionButton(
+            child: Icon(Icons.location_on),
+            onPressed: getLocation,
+          ),
+        ],
+      ),
+    );
+  }
+}

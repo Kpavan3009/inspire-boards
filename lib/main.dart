@@ -1002,3 +1002,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
+
+
+class CollectionDetailsScreen extends StatelessWidget {
+  final Collection collection;
+
+  const CollectionDetailsScreen({Key? key, required this.collection})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(collection.name),
+        centerTitle: true,
+      ),
+      body: GridView.builder(
+        itemCount: collection.images.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: 5,
+          mainAxisSpacing: 5,
+        ),
+        itemBuilder: (context, index) {
+          final image = collection.images[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ImageDetailsScreen(image: image),
+                ),
+              );
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                image.url,
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

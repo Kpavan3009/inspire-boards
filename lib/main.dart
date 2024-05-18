@@ -1148,4 +1148,68 @@ class ImageDetailsScreen extends StatelessWidget {
     );
   }
 }
+  Future<List<Collection>> _getCollections() async {
+    final prefs = await SharedPreferences.getInstance();
+    final collectionData = prefs.getString('collections');
+    if (collectionData != null) {
+      final decodedData = json.decode(collectionData);
+      return (decodedData as List)
+          .map((collectionData) => Collection(
+                id: collectionData['id'],
+                name: collectionData['name'],
+                images: (collectionData['images'] as List)
+                    .map((imageData) => ImageData(
+                          id: imageData['id'],
+                          url: imageData['url'],
+                          description: imageData['description'],
+                          originalUrl: imageData['originalUrl'],
+                        ))
+                    .toList(),
+              ))
+          .toList();
+    }
+    return [];
+  }
 
+  void _addImageToCollection(
+      BuildContext context, ImageData image, String collectionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final collectionData = prefs.getString('collections');
+    if (collectionData != null) {
+      final decodedData = json.decode(collectionData);
+      final collections = (decodedData as List)
+          .map((collectionData) => Collection(
+                id: collectionData['id'],
+                name: collectionData['name'],
+                images: (collectionData['images'] as List)
+                    .map((imageData) => ImageData(
+                          id: imageData['id'],
+                          url: imageData['url'],
+                          description: imageData['description'],
+                          originalUrl: imageData['originalUrl'],
+                        ))
+                    .toList(),
+              ))
+          .toList();
+      final collection =
+          collections.firstWhere((collection) => collection.id == collectionId);
+      collection.images.add(image);
+      final updatedCollectionData = json.encode(collections.map((collection) => {
+            'id': collection.id,
+            'name': collection.name,
+            'images': collection.images
+                .map((image) => {
+                      'id': image.id,
+                      'url': image.url,
+                      'description': image.description,
+                      'originalUrl': image.originalUrl,
+                    })
+                .toList(),
+          }).toList());
+      await prefs.setString('collections', updatedCollectionData);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Image added to collection')),
+      );
+    }
+  }
+}

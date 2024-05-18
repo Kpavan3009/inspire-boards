@@ -1048,3 +1048,104 @@ class CollectionDetailsScreen extends StatelessWidget {
     );
   }
 }
+
+class ImageDetailsScreen extends StatelessWidget {
+  final ImageData image;
+
+  const ImageDetailsScreen({Key? key, required this.image}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Image Details'),
+        centerTitle: true,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Image.network(
+              image.url,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Description:',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  image.description,
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text('Save to Collection'),
+                          content: FutureBuilder<List<Collection>>(
+                            future: _getCollections(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                final collections = snapshot.data!;
+                                return ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: collections.length,
+                                  itemBuilder: (context, index) {
+                                    final collection = collections[index];
+                                    return ListTile(
+                                      title: Text(collection.name),
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        _addImageToCollection(
+                                            context, image, collection.id);
+                                      },
+                                    );
+                                  },
+                                );
+                              } else {
+                                return CircularProgressIndicator();
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  child: Text('Save to Collection'),
+                ),
+                SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    Share.share('Check out this amazing image: ${image.url}');
+                  },
+                  child: Text('Share'),
+                ),
+                SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    launch(image.originalUrl);
+                  },
+                  child: Text('Visit Original Source'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

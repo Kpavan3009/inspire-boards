@@ -1,16 +1,43 @@
-# finalproject
 
-A new Flutter project.
+# Inspire Boards
 
-## Getting Started
+[Deployed Version of Inspire Boards](https://66480f617c57ca69cbac9309--symphonious-malasada-ce50df.netlify.app/)
 
-This project is a starting point for a Flutter application.
+Inspire Boards is a Flutter web application. This README will guide you on how to clone the repository, set up the project locally, and run it on your browser.
 
-A few resources to get you started if this is your first Flutter project:
+## Prerequisites
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Before you begin, ensure you have the following installed on your machine:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [Flutter](https://flutter.dev/docs/get-started/install)
+- [Git](https://git-scm.com/downloads)
+
+## Cloning the Repository
+
+To clone the repository, run the following command in your terminal:
+
+```bash
+git clone https://github.com/Kpavan3009/inspire-boards.git
+```
+
+Navigate to the project directory:
+
+```bash
+cd inspire-boards
+```
+
+## Running the Application
+
+To run the application locally, use the following command:
+
+```bash
+flutter run -d chrome
+```
+
+This command will build and run the application in your default web browser, specifically targeting Google Chrome.
+
+
+Feel free to reach out if you encounter any issues or have any questions regarding the project setup.
+
+Happy coding!
+```

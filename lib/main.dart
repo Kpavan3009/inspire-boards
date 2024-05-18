@@ -1147,7 +1147,7 @@ class ImageDetailsScreen extends StatelessWidget {
       ),
     );
   }
-}
+
   Future<List<Collection>> _getCollections() async {
     final prefs = await SharedPreferences.getInstance();
     final collectionData = prefs.getString('collections');
